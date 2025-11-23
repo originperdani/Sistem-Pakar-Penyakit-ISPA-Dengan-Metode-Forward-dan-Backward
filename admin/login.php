@@ -7,9 +7,16 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $u = trim($_POST['username'] ?? '');
   $p = trim($_POST['password'] ?? '');
+  $mode = $_POST['mode'] ?? 'forward'; // assume default mode from login form, needs form update
   if ($u === ADMIN_USER && $p === ADMIN_PASS) {
+    session_regenerate_id(true); // regenerate session ID on login success to clear old session data
     $_SESSION['admin'] = true;
-    header('Location: dashboard.php');
+    $_SESSION['mode'] = $mode; // save mode in session for dashboard or routing
+    if ($mode === 'backward') {
+      header('Location: backward_dashboard.php');
+    } else {
+      header('Location: dashboard.php');
+    }
     exit;
   } else {
     $error = 'Username atau password salah';
@@ -45,6 +52,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div>
           <label>Password</label>
           <input class="input" type="password" name="password" placeholder="••••••" required />
+        </div>
+        <div>
+          <label>Mode</label>
+          <select name="mode" class="input" required>
+            <option value="forward" selected>Forward Chaining</option>
+            <option value="backward">Backward Chaining</option>
+          </select>
         </div>
         <div>
           <button class="btn btn-primary" type="submit">Masuk</button>

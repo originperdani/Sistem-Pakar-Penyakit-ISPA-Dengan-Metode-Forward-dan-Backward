@@ -7,41 +7,33 @@ $diseasesCount = (int)$db->query('SELECT COUNT(*) FROM diseases')->fetchColumn()
 $symptomsCount = (int)$db->query('SELECT COUNT(*) FROM symptoms')->fetchColumn();
 $rulesCount    = (int)$db->query('SELECT COUNT(*) FROM rules')->fetchColumn();
 
-$mode = $_SESSION['mode'] ?? 'forward';
-
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard ISPA - Admin</title>
+  <title>Dashboard ISPA - Admin (Backward Mode)</title>
   <link rel="stylesheet" href="../style.css" />
 </head>
 <body>
   <header class="app-header">
     <div class="brand">
       <div class="logo-dot"></div>
-      <div class="brand-name">ISPA Clinic • Admin</div>
+      <div class="brand-name">ISPA Clinic • Admin (Backward Mode)</div>
     </div>
     <nav class="app-nav">
-      <a class="active" href="dashboard.php">Dashboard</a>
-      <?php if ($mode === 'forward'): ?>
+      <a class="active" href="backward_dashboard.php">Dashboard</a>
       <a href="diseases.php">Penyakit</a>
       <a href="symptoms.php">Gejala</a>
-      <a href="../index.php">Diagnosa</a>
-      <?php else: /* backward mode */ ?>
-      <a href="diseases.php">Penyakit</a>
-      <a href="symptoms.php">Gejala</a>
-      <a href="../backward_fc_list.php">Diagnosa</a>
-      <?php endif; ?>
+      <a href="<?= base_path('/backward_fc_list.php') ?>">Diagnosa</a>
       <a href="logout.php">Keluar</a>
     </nav>
   </header>
 
   <main class="container">
     <div class="header">
-      <div class="title">Ringkasan Sistem</div>
+      <div class="title">Ringkasan Sistem (Backward Mode)</div>
       <div class="pill">
         <span>Status:</span>
         <span class="badge">Aktif</span>
@@ -71,20 +63,16 @@ $mode = $_SESSION['mode'] ?? 'forward';
         <div class="badge">Manajemen Data</div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <a class="btn btn-primary" href="diseases.php">Kelola Penyakit</a>
-        <a class="btn" href="symptoms.php">Kelola Gejala</a>
-        <?php if ($mode === 'forward'): ?>
-        <a class="btn" href="<?= base_path('/index.php') ?>">Mulai Diagnosa</a>
-        <?php else: ?>
-        <a class="btn" href="<?= base_path('/backward_fc_list.php') ?>">Mulai Diagnosa</a>
-        <?php endif; ?>
+      <a class="btn btn-primary" href="diseases.php">Kelola Penyakit</a>
+      <a class="btn" href="symptoms.php">Kelola Gejala</a>
+      <a class="btn" href="<?= base_path('/backward_fc_list.php') ?>">Mulai Diagnosa</a>
       </div>
     </section>
   </main>
 
   <footer class="container footer">
     <div>© ISPA Clinic</div>
-    <div class="badge"><?= ucfirst($mode) ?> Chaining</div>
+    <div class="badge">Backward Chaining</div>
   </footer>
 </body>
 </html>

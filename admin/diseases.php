@@ -64,7 +64,10 @@ $rows = $db->query('SELECT * FROM diseases ORDER BY code')->fetchAll(PDO::FETCH_
       <a class="active" href="diseases.php">Penyakit</a>
       <a href="symptoms.php">Gejala</a>
       <!-- <a href="rules.php">Aturan</a> -->
-      <a href="../index.php">Diagnosa</a>
+      <?php
+        $mode = $_SESSION['mode'] ?? 'forward';
+      ?>
+      <a href="<?php echo ($mode === 'backward') ? '../backward_fc_list.php' : '../index.php'; ?>">Diagnosa</a>
       <a href="logout.php">Keluar</a>
     </nav>
   </header>

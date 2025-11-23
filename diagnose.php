@@ -1,9 +1,21 @@
 <?php
 require __DIR__ . '/config.php';
 
+session_start();
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['symptoms'])) {
+    header('Location: index.php');
+    exit;
+}
 $selected = $_POST['symptoms'] ?? [];
 if (!is_array($selected)) $selected = [];
 $selected = array_values(array_unique($selected));
+
+// Redirect to symptom selection page if no symptoms selected
+if (empty($selected)) {
+    header('Location: index.php');
+    exit;
+}
 
 $diseases = getMapBy('SELECT code, name FROM diseases', 'code', 'name');
 $rules = getAll('SELECT code, disease_code FROM rules');
@@ -49,57 +61,16 @@ if (empty($matches)) {
   usort($suggestions, fn($a,$b) => $b['coverage'] <=> $a['coverage']);
   $suggestions = array_slice($suggestions, 0, 3);
 }
+
+// Save results to session temporarily for display in result page
+$_SESSION['diagnose_result'] = [
+    'selected' => $selected,
+    'matches' => $matches,
+    'suggestions' => $suggestions,
+    'diseases' => $diseases,
+];
+
+// Redirect to result page to prevent form resubmission
+header('Location: diagnose_result.php');
+exit;
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hasil Diagnosa – ISPA</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="title">Hasil Diagnosa</div>
-      <a class="btn btn-primary" href="index.php">&larr; Kembali</a>
-    </div>
-
-    <div class="card result">
-      <h3>Gejala yang dipilih (<?= count($selected) ?>)</h3>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">
-        <?php foreach ($selected as $g): ?>
-          <span class="badge"><?= htmlspecialchars($g) ?></span>
-        <?php endforeach; ?>
-      </div>
-    </div>
-
-    <?php if (!empty($matches)): ?>
-    <div class="card result" style="margin-top:10px">
-      <h3>Diagnosa Teridentifikasi</h3>
-      <?php foreach ($matches as $m): ?>
-        <p><strong><?= htmlspecialchars($diseases[$m['disease']] ?? $m['disease']) ?></strong> (<?= htmlspecialchars($m['disease']) ?>) – via aturan <code><?= htmlspecialchars($m['rule']) ?></code></p>
-        <div class="muted">Gejala kaidah: <?= implode(', ', $m['need']) ?></div>
-        <hr style="border-color:var(--border)">
-      <?php endforeach; ?>
-      <p>Catatan: Hasil ini adalah bantuan diagnosa dan bukan pengganti pemeriksaan dokter.</p>
-    </div>
-    <?php else: ?>
-    <div class="card result" style="margin-top:10px">
-      <h3>Tidak ada kecocokan penuh</h3>
-      <p>Kemungkinan teratas berdasarkan kecocokan gejala:</p>
-      <ol>
-        <?php foreach ($suggestions as $s): ?>
-          <li>
-            <strong><?= htmlspecialchars($diseases[$s['disease']] ?? $s['disease']) ?></strong> (<?= htmlspecialchars($s['disease']) ?>)
-            – coverage <?= number_format($s['coverage']*100, 0) ?>%
-            <div class="muted">Cocok: <?= implode(', ', $s['have']) ?> | Kurang: <?= implode(', ', $s['missing']) ?></div>
-          </li>
-        <?php endforeach; ?>
-      </ol>
-      <p>Tambahkan gejala yang sesuai untuk meningkatkan akurasi.</p>
-    </div>
-    <?php endif; ?>
-  </div>
-</body>
-</html>

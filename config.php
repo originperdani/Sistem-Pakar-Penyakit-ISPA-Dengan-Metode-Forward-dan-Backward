@@ -51,10 +51,10 @@ function require_admin() {
   }
 }
 
+define('BASE_URL', '/ISPA-Expert');
+
 function base_path($path) {
-  $root = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-  $base = $root === '' ? '' : $root;
-  return $base . $path;
+  return BASE_URL . $path;
 }
 
 ?>
