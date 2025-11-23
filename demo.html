@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo – Sistem Pakar ISPA (Client-side)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title">Demo Sistem Pakar ISPA</div>
+      <a class="badge" href="#" id="resetBtn">Reset</a>
+    </div>
+    <div class="card" style="padding:14px">
+      <p>Pilih gejala, lalu klik Diagnosa. Demo ini berjalan tanpa PHP/MySQL.</p>
+      <div class="grid" id="symptomGrid"></div>
+      <div class="footer">
+        <span class="muted" id="summary"></span>
+        <button class="btn btn-primary" id="diagBtn">Diagnosa</button>
+      </div>
+    </div>
+    <div id="result"></div>
+  </div>
+  <script>
+    const diseases = {
+      P001:'Bronkitis',P002:'Sinusitis',P003:'Bronkiolitis',P004:'Pneumonia',P005:'Faringitis',P006:'Epiglotitis',P007:'Pleuritis',P008:'Common Cold',P009:'ILI (Influenza Like Illness)'
+    };
+    const symptoms = [
+      ['G001','Demam'],['G002','Batuk-Batuk'],['G003','Hidung Tersumbat/Pilek'],['G004','Sakit Kepala/Pusing'],['G005','Sakit Tenggorokan'],
+      ['G006','Susah Menelan'],['G007','Badan Lemas & Lesu'],['G008','Sesak Nafas'],['G009','Bersin-Bersin'],['G010','Frekuensi Nafas Cepat'],
+      ['G011','Suara Nafas Kasar'],['G012','Nafsu Makan Berkurang'],['G013','Suara Serak'],['G014','Gelisah'],['G015','Susah Tidur'],
+      ['G016','Nyeri Di Dada'],['G017','Berkurangnya Kemampuan Indra Penciuman'],['G018','Wajah Terasa Nyeri/Tertekan'],['G019','Bau Mulut'],
+      ['G020','Sakit Gigi'],['G021','Nyeri Sendi/Otot'],['G022','Berkeringat & Menggigil'],['G023','Batuk dahak kental hijau/kuning/atau darah'],
+      ['G024','Diare'],['G025','Mual/Muntah'],['G026','Nyeri Bahu & Punggung'],['G027','Hidung Berair'],['G028','Nyeri Telinga'],['G029','Mata Berair'],['G030','Dehidrasi']
+    ];
+    const rules = {
+      R1:{d:'P001',g:['G001','G002','G003','G007','G008','G011','G023','G027']},
+      R2:{d:'P002',g:['G001','G002','G003','G004','G008','G009','G010','G013','G015','G017','G018','G019','G020']},
+      R3:{d:'P003',g:['G001','G002','G007','G008','G010','G011','G012','G015','G030']},
+      R4:{d:'P004',g:['G001','G002','G004','G008','G010','G012','G016','G023','G024','G025']},
+      R5:{d:'P005',g:['G001','G002','G004','G005','G006','G007','G009','G012','G013','G025']},
+      R6:{d:'P006',g:['G001','G004','G005','G006','G011','G013','G014']},
+      R7:{d:'P007',g:['G001','G002','G008','G010','G016','G021','G022','G023','G026']},
+      R8:{d:'P008',g:['G001','G002','G003','G004','G009','G013','G017','G027','G029']},
+      R9:{d:'P009',g:['G001','G002','G003','G004','G005','G006','G007','G008','G009','G010','G011','G012','G013','G017','G022','G029']}
+    };
+    const grid = document.getElementById('symptomGrid');
+    const summary = document.getElementById('summary');
+    const result = document.getElementById('result');
+    const sel = new Set();
+    symptoms.forEach(([code,name])=>{
+      const label = document.createElement('label');
+      label.className='symptom';
+      label.innerHTML = `<input type="checkbox" value="${code}"><span><strong>${code}</strong> – ${name}</span>`;
+      const cb = label.querySelector('input');
+      cb.addEventListener('change',()=>{ cb.checked? sel.add(code) : sel.delete(code); summary.textContent = `Dipilih: ${sel.size}`; });
+      grid.appendChild(label);
+    });
+    document.getElementById('resetBtn').onclick = ()=>{ sel.clear(); document.querySelectorAll('input[type=checkbox]').forEach(x=>x.checked=false); summary.textContent='Dipilih: 0'; result.innerHTML=''; };
+    document.getElementById('diagBtn').onclick = ()=>{
+      const selected = Array.from(sel);
+      const matches = [];
+      const suggestions = [];
+      Object.entries(rules).forEach(([rc,{d,g}])=>{
+        const missing = g.filter(x=>!sel.has(x));
+        if(missing.length===0){ matches.push({rule:rc,disease:d,need:g}); }
+        else{
+          const have = g.filter(x=>sel.has(x));
+          const coverage = have.length/g.length;
+          suggestions.push({rule:rc,disease:d,coverage,have,missing});
+        }
+      });
+      suggestions.sort((a,b)=>b.coverage-a.coverage);
+      const top = suggestions.slice(0,3);
+      let html = '<div class="card result" style="margin-top:10px">';
+      html += `<h3>Gejala dipilih (${selected.length})</h3>`;
+      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">'+selected.map(s=>`<span class="badge">${s}</span>`).join(' ')+'</div>';
+      if(matches.length){
+        html += '<h3>Diagnosa Teridentifikasi</h3>';
+        matches.forEach(m=>{ html += `<p><strong>${diseases[m.disease]}</strong> (${m.disease}) – via aturan <code>${m.rule}</code></p><div class="muted">Gejala kaidah: ${m.need.join(', ')}</div><hr style="border-color:var(--border)">`; });
+      } else {
+        html += '<h3>Tidak ada kecocokan penuh</h3><p>Kemungkinan teratas:</p><ol>';
+        top.forEach(s=>{ html += `<li><strong>${diseases[s.disease]}</strong> (${s.disease}) – coverage ${Math.round(s.coverage*100)}% <div class="muted">Cocok: ${s.have.join(', ')} | Kurang: ${s.missing.join(', ')}</div></li>`; });
+        html += '</ol>';
+      }
+      html += '<p>Catatan: ini alat bantu, bukan pengganti diagnosa dokter.</p></div>';
+      result.innerHTML = html;
+    };
+    summary.textContent='Dipilih: 0';
+  </script>
+</body>
+</html>
